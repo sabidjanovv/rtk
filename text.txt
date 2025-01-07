@@ -1,0 +1,186 @@
+pages/Create.tsx:
+import { FormEvent } from "react";
+import { useCreateUserMutation } from "../redux/api/user-api";
+import { IUserForm } from "../types";
+
+const Create = () => {
+  const [createUser] = useCreateUserMutation();
+
+  const handleCreateUser = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data: IUserForm = Object.fromEntries(
+      formData
+    ) as unknown as IUserForm;
+    createUser(data);
+  };
+  return (
+    <div className="min-h-screen bg-gray-100 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow-md rounded-md p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            Add New User
+          </h2>
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Age
+              </label>
+              <input
+                type="text"
+                name="age"
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Gender
+              </label>
+              <input
+                type="text"
+                name="gender"
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Profession
+              </label>
+              <input
+                type="text"
+                name="profession"
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:ring-4 focus:ring-blue-300"
+            >
+              Add User
+            </button>
+          </form>
+        </div>
+      </div>  
+    </div>
+  );
+};
+
+export default Create;
+
+
+pages/Home.tsx:
+import {
+  useDeleteUserMutation,
+  useGetUserQuery,
+} from "../redux/api/user-api";
+import { IUser } from "../types";
+
+const Home = () => {
+  const { data } = useGetUserQuery("");
+  const [deleteUser] = useDeleteUserMutation();
+
+  const handleDelete = (id: string) => {
+    deleteUser(id);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow-md rounded-md p-6">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            Users List
+          </h2>
+          {Number(data?.length) > 0 ? (
+            <div className="space-y-6">
+              {data?.map((user: IUser) => (
+                <div
+                  key={user.id}
+                  className="p-4 border border-gray-200 rounded-md flex justify-between items-center"
+                >
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {user.name}
+                    </h3>
+                    <p className="text-gray-600">Age: {user.age}</p>
+                    <p className="text-gray-600">Gender: {user.gender}</p>
+                    <p className="text-gray-600">
+                      Profession: {user.profession}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(user.id)}
+                    className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:ring-4 focus:ring-red-300"
+                  >
+                    Delete
+                  </button>
+                  
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No users found.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Home;
+
+
+redux/api/user-api.ts:
+import { api } from ".";
+import { IUser, IUserForm } from "../../types";
+
+const userApi = api.injectEndpoints({
+  endpoints: (build) => ({
+    getUser: build.query<IUser[], any>({
+      query: () => "/users",
+      providesTags: ["Users"]
+    }),
+    deleteUser: build.mutation<any, string>({
+      query: (id) => ({
+        url: `/users/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Users"]
+    }),
+    createUser: build.mutation<IUser, IUserForm>({
+      query: (body) => ({
+        url: "/users",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Users"]
+    }),
+    updateUser: build.mutation<IUser, any>({
+      query: ({ id, body }) => ({
+        url: `/users/${id}`,
+        method: "PUT",
+        body
+      }),
+      invalidatesTags: ["Users"]
+    })
+  }),
+  overrideExisting: false,
+});
+
+export const { useGetUserQuery, useDeleteUserMutation, useCreateUserMutation } = userApi;
+
+
+add and fix update endpoint
